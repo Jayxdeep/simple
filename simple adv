@@ -1,0 +1,99 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Pin definitions
+#define BUTTON_INC 2
+#define BUTTON_DEC 3
+#define BUTTON_RESET 4
+#define BUZZER 5
+
+int count = 0;
+int stateInc = 0;
+int stateDec = 0;
+int stateReset = 0;
+const int minCount = 0;
+const int maxCount = 999;
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Set the LCD address to 0x27 for a 16 chars and 2 line display
+
+void setup() {
+  lcd.init(); // Initialize the LCD
+  lcd.backlight(); // Turn on the backlight
+
+  // Print initial message to the LCD
+  lcd.setCursor(0, 0);
+  lcd.print("  Turn counter ");
+  updateDisplay();
+
+  // Initialize pins
+  pinMode(BUTTON_INC, INPUT_PULLUP);
+  pinMode(BUTTON_DEC, INPUT_PULLUP);
+  pinMode(BUTTON_RESET, INPUT_PULLUP);
+  pinMode(BUZZER, OUTPUT);
+}
+
+void loop() {
+  // Read button states
+  int incState = digitalRead(BUTTON_INC);
+  int decState = digitalRead(BUTTON_DEC);
+  int resetState = digitalRead(BUTTON_RESET);
+
+  // Handle increment button
+  if (incState == LOW && stateInc == 0) {
+    stateInc = 1;
+    if (count < maxCount) {
+      count++;
+      updateDisplay();
+      beep();
+    }
+  }
+  if (incState == HIGH) {
+    stateInc = 0;
+  }
+
+  // Handle decrement button
+  if (decState == LOW && stateDec == 0) {
+    stateDec = 1;
+    if (count > minCount) {
+      count--;
+      updateDisplay();
+      beep();
+    }
+  }
+  if (decState == HIGH) {
+    stateDec = 0;
+  }
+
+  // Handle reset button
+  if (resetState == LOW && stateReset == 0) {
+    stateReset = 1;
+    count = 0;
+    updateDisplay();
+    beep();
+  }
+  if (resetState == HIGH) {
+    stateReset = 0;
+  }
+
+  delay(50); // Debounce delay
+}
+
+void updateDisplay() {
+  lcd.setCursor(0, 1);
+  lcd.print("                "); // Clear the previous count
+  lcd.setCursor(0, 1);
+  lcd.print("Count: ");
+  lcd.print(formatCount(count));
+}
+
+String formatCount(int value) {
+  char buf[4];
+  snprintf(buf, 4, "%03d", value); // Format count as 3 digits with leading zeros
+  return String(buf);
+}
+
+void beep() {
+  digitalWrite(BUZZER, HIGH);
+  delay(100);
+  digitalWrite(BUZZER, LOW);
+}
